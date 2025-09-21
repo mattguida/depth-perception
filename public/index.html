@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depth Perception</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Landing Page Styles */
+        .landing-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            height: 100%;
+        }
+        .landing-page h1 {
+            font-size: 36px;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        .landing-page p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .input-group {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .input-group input:focus {
+            border-color: #16213e;
+        }
+        .consent-text {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .continue-btn {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            letter-spacing: 1px;
+        }
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(26, 26, 46, 0.3);
+        }
+        .continue-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Room Selection Styles */
+        .room-selection {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            height: 100%;
+        }
+        .room-selection h2 {
+            font-size: 28px;
+            color: #1a1a2e;
+            margin-bottom: 40px;
+            font-weight: 300;
+        }
+        .room-buttons {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .room-btn {
+            width: 100px;
+            height: 100px;
+            border: 3px solid #1a1a2e;
+            background: transparent;
+            border-radius: 50%;
+            font-size: 36px;
+            font-weight: bold;
+            color: #1a1a2e;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .room-btn:hover {
+            background: #1a1a2e;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Swipe Interface Styles */
+        .swipe-interface {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+        .header {
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        .clock {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .swipe-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: linear-gradient(45deg, rgba(26,26,46,0.05) 0%, rgba(22,33,62,0.05) 100%);
+        }
+        .swipe-zone {
+            width: 300px;
+            height: 400px;
+            border: 3px dashed rgba(26,26,46,0.3);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(5px);
+        }
+        .swipe-zone:active {
+            cursor: grabbing;
+        }
+        .swipe-zone.dragging {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(26,26,46,0.2);
+        }
+        .swipe-instruction {
+            font-size: 18px;
+            color: #1a1a2e;
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        .swipe-indicators {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 60px;
+        }
+        .swipe-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .swipe-indicator.left {
+            color: #ff4757;
+        }
+        .swipe-indicator.right {
+            color: #2ed573;
+        }
+        .swipe-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .swipe-icon.left {
+            background: #ff4757;
+        }
+        .swipe-icon.right {
+            background: #2ed573;
+        }
+        .feedback-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 20px;
+        }
+        .feedback-flash.active {
+            opacity: 0.3;
+        }
+        .feedback-flash.positive {
+            background: #2ed573;
+        }
+        .feedback-flash.negative {
+            background: #ff4757;
+        }
+        .user-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+            font-family: monospace;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .app-container {
+                border-radius: 0;
+                height: 100vh;
+            }
+            .room-buttons {
+                gap: 20px;
+            }
+            .room-btn {
+                width: 80px;
+                height: 80px;
+                font-size: 28px;
+            }
+            .swipe-zone {
+                width: 280px;
+                height: 350px;
+            }
+        }
+
+        /* Animation for swipe feedback */
+        @keyframes swipeLeft {
+            0% { transform: translateX(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateX(-100px) rotate(-15deg); opacity: 0; }
+        }
+        @keyframes swipeRight {
+            0% { transform: translateX(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateX(100px) rotate(15deg); opacity: 0; }
+        }
+        .swipe-left-anim {
+            animation: swipeLeft 0.3s ease-out;
+        }
+        .swipe-right-anim {
+            animation: swipeRight 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Landing Page -->
+        <div class="landing-page" id="landingPage">
+            <h1>Depth Perception</h1>
+            <p>Welcome to the performance interaction</p>
+            
+            <div class="input-group">
+                <input type="text" id="usernameInput" placeholder="Enter your name" maxlength="50">
+            </div>
+            
+            <p class="consent-text">
+                By clicking continue you agree to having your anonymized data used for research purposes.
+            </p>
+            
+            <button class="continue-btn" id="continueBtn" onclick="proceedToRoomSelection()">CONTINUE</button>
+        </div>
+
+        <!-- Room Selection Page -->
+        <div class="room-selection" id="roomSelection">
+            <h2>Please select which side of the room you are sitting in</h2>
+            <div class="room-buttons">
+                <button class="room-btn" onclick="selectRoom('A')">A</button>
+                <button class="room-btn" onclick="selectRoom('B')">B</button>
+            </div>
+        </div>
+
+        <!-- Swipe Interface -->
+        <div class="swipe-interface" id="swipeInterface">
+            <div class="header">
+                <div class="user-info" id="userInfo"></div>
+                <h1>Depth Perception</h1>
+                <div class="clock" id="clock">00:00:00</div>
+            </div>
+            
+            <div class="swipe-area">
+                <div class="swipe-zone" id="swipeZone">
+                    <div class="swipe-instruction">
+                        Swipe left for NO<br>
+                        Swipe right for YES
+                    </div>
+                </div>
+                <div class="feedback-flash" id="feedbackFlash"></div>
+                
+                <div class="swipe-indicators">
+                    <div class="swipe-indicator left">
+                        <div class="swipe-icon left">✕</div>
+                        <span>NO</span>
+                    </div>
+                    <div class="swipe-indicator right">
+                        <div class="swipe-icon right">✓</div>
+                        <span>YES</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DepthPerceptionApp {
+            constructor() {
+                this.userId = null;
+                this.username = null;
+                this.roomSide = null;
+                this.isDragging = false;
+                this.startX = 0;
+                this.currentX = 0;
+                
+                this.init();
+            }
+            
+            init() {
+                this.generateUserId();
+                this.startClock();
+                this.setupSwipeListeners();
+                this.setupInputValidation();
+            }
+            
+            generateUserId() {
+                // Check if user already has an ID stored
+                this.userId = localStorage.getItem('depthPerceptionUserId');
+                if (!this.userId) {
+                    this.userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('depthPerceptionUserId', this.userId);
+                }
+                console.log('User ID:', this.userId);
+            }
+            
+            setupInputValidation() {
+                const input = document.getElementById('usernameInput');
+                const btn = document.getElementById('continueBtn');
+                
+                input.addEventListener('input', () => {
+                    btn.disabled = input.value.trim().length === 0;
+                });
+                
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && input.value.trim().length > 0) {
+                        this.proceedToRoomSelection();
+                    }
+                });
+                
+                // Initial state
+                btn.disabled = true;
+            }
+            
+            startClock() {
+                const updateClock = () => {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('en-AU', {
+                        timeZone: 'Australia/Melbourne',
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    
+                    const clockElement = document.getElementById('clock');
+                    if (clockElement) {
+                        clockElement.textContent = timeString;
+                    }
+                };
+                
+                updateClock();
+                setInterval(updateClock, 1000);
+            }
+            
+            setupSwipeListeners() {
+                const swipeZone = document.getElementById('swipeZone');
+                
+                // Touch events
+                swipeZone.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
+                swipeZone.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+                swipeZone.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: true });
+                
+                // Mouse events
+                swipeZone.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                swipeZone.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                swipeZone.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                swipeZone.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+                
+                // Keyboard events (for testing)
+                document.addEventListener('keydown', this.handleKeyDown.bind(this));
+            }
+            
+            handleTouchStart(e) {
+                this.startDrag(e.touches[0].clientX);
+            }
+            
+            handleTouchMove(e) {
+                e.preventDefault();
+                this.updateDrag(e.touches[0].clientX);
+            }
+            
+            handleTouchEnd(e) {
+                this.endDrag();
+            }
+            
+            handleMouseDown(e) {
+                this.startDrag(e.clientX);
+            }
+            
+            handleMouseMove(e) {
+                if (this.isDragging) {
+                    this.updateDrag(e.clientX);
+                }
+            }
+            
+            handleMouseUp(e) {
+                this.endDrag();
+            }
+            
+            handleKeyDown(e) {
+                if (document.getElementById('swipeInterface').style.display !== 'flex') return;
+                
+                if (e.key === 'ArrowLeft') {
+                    this.recordSwipe(false);
+                } else if (e.key === 'ArrowRight') {
+                    this.recordSwipe(true);
+                }
+            }
+            
+            startDrag(clientX) {
+                this.isDragging = true;
+                this.startX = clientX;
+                this.currentX = clientX;
+                document.getElementById('swipeZone').classList.add('dragging');
+            }
+            
+            updateDrag(clientX) {
+                if (!this.isDragging) return;
+                
+                this.currentX = clientX;
+                const deltaX = this.currentX - this.startX;
+                const swipeZone = document.getElementById('swipeZone');
+                
+                const rotation = deltaX * 0.05;
+                const opacity = 1 - Math.abs(deltaX) / 200;
+                
+                swipeZone.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+                swipeZone.style.opacity = Math.max(0.5, opacity);
+            }
+            
+            endDrag() {
+                if (!this.isDragging) return;
+                
+                this.isDragging = false;
+                const deltaX = this.currentX - this.startX;
+                const swipeZone = document.getElementById('swipeZone');
+                
+                swipeZone.classList.remove('dragging');
+                
+                if (Math.abs(deltaX) > 80) {
+                    const isPositive = deltaX > 0;
+                    this.recordSwipe(isPositive);
+                    this.showSwipeFeedback(isPositive);
+                } else {
+                    // Snap back
+                    swipeZone.style.transform = '';
+                    swipeZone.style.opacity = '';
+                }
+                
+                // Always reset after a brief delay
+                setTimeout(() => {
+                    swipeZone.style.transform = '';
+                    swipeZone.style.opacity = '';
+                    swipeZone.classList.remove('swipe-left-anim', 'swipe-right-anim');
+                }, 300);
+            }
+            
+            showSwipeFeedback(isPositive) {
+                const swipeZone = document.getElementById('swipeZone');
+                const feedbackFlash = document.getElementById('feedbackFlash');
+                
+                // Add animation class
+                swipeZone.classList.add(isPositive ? 'swipe-right-anim' : 'swipe-left-anim');
+                
+                // Flash effect
+                feedbackFlash.classList.add('active', isPositive ? 'positive' : 'negative');
+                setTimeout(() => {
+                    feedbackFlash.classList.remove('active', 'positive', 'negative');
+                }, 200);
+            }
+            
+            recordSwipe(isPositive) {
+                const timestamp = new Date().toISOString();
+                const melbourneTime = new Date().toLocaleString('en-AU', {
+                    timeZone: 'Australia/Melbourne'
+                });
+                
+                const swipeData = {
+                    userId: this.userId,
+                    username: this.username,
+                    roomSide: this.roomSide,
+                    swipeDirection: isPositive ? 'right' : 'left',
+                    response: isPositive ? 'yes' : 'no',
+                    timestamp: timestamp,
+                    melbourneTime: melbourneTime,
+                    userAgent: navigator.userAgent
+                };
+                
+                console.log('Swipe recorded:', swipeData);
+                
+                // Send to server (implement this based on your backend)
+                this.sendToServer(swipeData);
+            }
+            
+            async sendToServer(data) {
+                try {
+                    const response = await fetch('/api/swipe', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (!response.ok) {
+                        console.error('Failed to save swipe:', response.status);
+                    } else {
+                        console.log('Swipe saved successfully');
+                    }
+                } catch (error) {
+                    console.error('Error sending swipe data:', error);
+                    // Store locally as backup
+                    const localData = JSON.parse(localStorage.getItem('pendingSwipes') || '[]');
+                    localData.push(data);
+                    localStorage.setItem('pendingSwipes', JSON.stringify(localData));
+                }
+            }
+        }
+        
+        // Global app instance
+        let app;
+        
+        // Global functions for UI navigation
+        function proceedToRoomSelection() {
+            const username = document.getElementById('usernameInput').value.trim();
+            if (username.length === 0) return;
+            
+            app.username = username;
+            document.getElementById('landingPage').style.display = 'none';
+            document.getElementById('roomSelection').style.display = 'flex';
+        }
+        
+        function selectRoom(side) {
+            app.roomSide = side;
+            document.getElementById('roomSelection').style.display = 'none';
+            document.getElementById('swipeInterface').style.display = 'flex';
+            
+            // Update user info display
+            document.getElementById('userInfo').textContent = 
+                `${app.username} | Room ${side} | ID: ${app.userId.split('_')[1]}`;
+        }
+        
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new DepthPerceptionApp();
+        });
+    </script>
+</body>
+</html>
