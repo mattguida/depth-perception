@@ -32,7 +32,6 @@
             overflow: hidden;
             position: relative;
         }
-
         /* Landing Page Styles */
         .landing-page {
             display: flex;
@@ -98,7 +97,6 @@
             cursor: not-allowed;
             transform: none;
         }
-
         /* Room Selection Styles */
         .room-selection {
             display: none;
@@ -137,12 +135,12 @@
             color: white;
             transform: scale(1.1);
         }
-
         /* Swipe Interface Styles */
         .swipe-interface {
             display: none;
             flex-direction: column;
             height: 100%;
+            background: linear-gradient(145deg, rgba(26,26,46,0.1) 0%, rgba(22,33,62,0.1) 100%);
         }
         .header {
             padding: 20px;
@@ -158,17 +156,17 @@
             letter-spacing: 2px;
         }
         .question-area {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px;
+            background: transparent;
+            padding: 30px 20px;
             text-align: center;
         }
         .question {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 400;
             color: #1a1a2e;
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
         }
         .swipe-area {
             flex: 1;
@@ -176,52 +174,115 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            background: linear-gradient(45deg, rgba(26,26,46,0.05) 0%, rgba(22,33,62,0.05) 100%);
+            padding: 20px;
         }
         .swipe-zone {
-            width: 250px;
-            height: 320px;
-            border: 3px dashed rgba(26,26,46,0.3);
-            border-radius: 20px;
+            width: 280px;
+            height: 350px;
+            border: 3px dashed rgba(26,26,46,0.4);
+            border-radius: 25px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             cursor: grab;
             transition: all 0.3s ease;
-            background: rgba(255,255,255,0.5);
-            backdrop-filter: blur(5px);
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(26,26,46,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .swipe-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(46,213,115,0.3), transparent);
+            transition: left 0.3s ease;
+        }
+        .swipe-zone::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,71,87,0.3), transparent);
+            transition: right 0.3s ease;
+        }
+        .swipe-zone.hint-left::before {
+            left: 0;
+        }
+        .swipe-zone.hint-right::after {
+            right: 0;
         }
         .swipe-zone:active {
             cursor: grabbing;
         }
         .swipe-zone.dragging {
             transform: scale(1.05);
-            box-shadow: 0 10px 30px rgba(26,26,46,0.2);
+            box-shadow: 0 15px 40px rgba(26,26,46,0.2);
+            border-color: rgba(26,26,46,0.6);
         }
         .swipe-instruction {
-            font-size: 16px;
+            font-size: 18px;
             color: #1a1a2e;
             text-align: center;
-            margin-bottom: 20px;
-            opacity: 0.7;
-            line-height: 1.4;
+            margin-bottom: 30px;
+            opacity: 0.8;
+            line-height: 1.5;
+            z-index: 2;
+            position: relative;
+        }
+        .swipe-visual-hint {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 200px;
+            margin-top: 20px;
+            z-index: 2;
+            position: relative;
+        }
+        .swipe-arrow {
+            font-size: 24px;
+            opacity: 0.6;
+            animation: pulse 2s infinite;
+        }
+        .swipe-arrow.left {
+            color: #2ed573;
+            animation: slideLeft 2s infinite;
+        }
+        .swipe-arrow.right {
+            color: #ff4757;
+            animation: slideRight 2s infinite;
+        }
+        @keyframes slideLeft {
+            0%, 100% { transform: translateX(0); opacity: 0.6; }
+            50% { transform: translateX(-10px); opacity: 1; }
+        }
+        @keyframes slideRight {
+            0%, 100% { transform: translateX(0); opacity: 0.6; }
+            50% { transform: translateX(10px); opacity: 1; }
         }
         .swipe-indicators {
             position: absolute;
-            bottom: 40px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 60px;
+            gap: 80px;
         }
         .swipe-indicator {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-size: 14px;
-            color: #666;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
         .swipe-indicator.left {
             color: #2ed573;
@@ -230,21 +291,27 @@
             color: #ff4757;
         }
         .swipe-icon {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
         }
         .swipe-icon.left {
-            background: #2ed573;
+            background: linear-gradient(135deg, #2ed573, #20bf6b);
         }
         .swipe-icon.right {
-            background: #ff4757;
+            background: linear-gradient(135deg, #ff4757, #ff3742);
+        }
+        .swipe-indicator:hover .swipe-icon {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
         .feedback-flash {
             position: absolute;
@@ -258,13 +325,13 @@
             border-radius: 20px;
         }
         .feedback-flash.active {
-            opacity: 0.3;
+            opacity: 0.4;
         }
         .feedback-flash.positive {
-            background: #2ed573;
+            background: radial-gradient(circle, #2ed573, transparent);
         }
         .feedback-flash.negative {
-            background: #ff4757;
+            background: radial-gradient(circle, #ff4757, transparent);
         }
         .user-info {
             position: absolute;
@@ -274,7 +341,19 @@
             color: rgba(255,255,255,0.7);
             font-family: monospace;
         }
-
+        .swipe-counter {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            color: #1a1a2e;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
         /* Responsive Design */
         @media (max-width: 480px) {
             .app-container {
@@ -290,25 +369,37 @@
                 font-size: 28px;
             }
             .swipe-zone {
-                width: 220px;
-                height: 280px;
+                width: 250px;
+                height: 320px;
+            }
+            .swipe-indicators {
+                gap: 60px;
             }
         }
-
-        /* Animation for swipe feedback */
+        /* Enhanced animations for swipe feedback */
         @keyframes swipeLeft {
-            0% { transform: translateX(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateX(-100px) rotate(-15deg); opacity: 0; }
+            0% { transform: translateX(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateX(-120px) rotate(-20deg) scale(0.8); opacity: 0; }
         }
         @keyframes swipeRight {
-            0% { transform: translateX(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateX(100px) rotate(15deg); opacity: 0; }
+            0% { transform: translateX(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateX(120px) rotate(20deg) scale(0.8); opacity: 0; }
         }
         .swipe-left-anim {
-            animation: swipeLeft 0.3s ease-out;
+            animation: swipeLeft 0.4s ease-out;
         }
         .swipe-right-anim {
-            animation: swipeRight 0.3s ease-out;
+            animation: swipeRight 0.4s ease-out;
+        }
+        
+        /* Improved dragging visual feedback */
+        .swipe-zone.dragging-left {
+            border-color: #2ed573;
+            box-shadow: 0 15px 40px rgba(46,213,115,0.3);
+        }
+        .swipe-zone.dragging-right {
+            border-color: #ff4757;
+            box-shadow: 0 15px 40px rgba(255,71,87,0.3);
         }
     </style>
 </head>
@@ -329,7 +420,6 @@
             
             <button class="continue-btn" id="continueBtn" onclick="proceedToRoomSelection()">CONTINUE</button>
         </div>
-
         <!-- Room Selection Page -->
         <div class="room-selection" id="roomSelection">
             <h2>Please select which side of the room you are sitting in</h2>
@@ -338,7 +428,6 @@
                 <button class="room-btn" onclick="selectRoom('B')">B</button>
             </div>
         </div>
-
         <!-- Swipe Interface -->
         <div class="swipe-interface" id="swipeInterface">
             <div class="header">
@@ -347,7 +436,7 @@
             </div>
             
             <div class="question-area">
-                <div class="question">Are the performers doing the text?</div>
+                <div class="question">Are the performers enacting the text?</div>
             </div>
             
             <div class="swipe-area">
@@ -355,6 +444,10 @@
                     <div class="swipe-instruction">
                         Swipe left for YES<br>
                         Swipe right for NO
+                    </div>
+                    <div class="swipe-visual-hint">
+                        <div class="swipe-arrow left">←</div>
+                        <div class="swipe-arrow right">→</div>
                     </div>
                 </div>
                 <div class="feedback-flash" id="feedbackFlash"></div>
@@ -372,7 +465,6 @@
             </div>
         </div>
     </div>
-
     <script>
         class DepthPerceptionApp {
             constructor() {
@@ -382,6 +474,7 @@
                 this.isDragging = false;
                 this.startX = 0;
                 this.currentX = 0;
+                this.swipeCount = 0;
                 
                 this.init();
             }
@@ -394,7 +487,6 @@
             }
             
             generateUserId() {
-                // Check if user already has an ID stored
                 this.userId = localStorage.getItem('depthPerceptionUserId');
                 if (!this.userId) {
                     this.userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -417,7 +509,6 @@
                     }
                 });
                 
-                // Initial state
                 btn.disabled = true;
             }
             
@@ -456,8 +547,20 @@
                 swipeZone.addEventListener('mouseup', this.handleMouseUp.bind(this));
                 swipeZone.addEventListener('mouseleave', this.handleMouseUp.bind(this));
                 
-                // Keyboard events (for testing)
+                // Keyboard events
                 document.addEventListener('keydown', this.handleKeyDown.bind(this));
+                
+                // Hover hints
+                swipeZone.addEventListener('mouseenter', () => {
+                    swipeZone.classList.add('hint-left');
+                    setTimeout(() => {
+                        swipeZone.classList.remove('hint-left');
+                        swipeZone.classList.add('hint-right');
+                        setTimeout(() => {
+                            swipeZone.classList.remove('hint-right');
+                        }, 500);
+                    }, 500);
+                });
             }
             
             handleTouchStart(e) {
@@ -491,9 +594,9 @@
                 if (document.getElementById('swipeInterface').style.display !== 'flex') return;
                 
                 if (e.key === 'ArrowLeft') {
-                    this.recordSwipe(true); // Left arrow = YES
+                    this.recordSwipe(true);
                 } else if (e.key === 'ArrowRight') {
-                    this.recordSwipe(false); // Right arrow = NO
+                    this.recordSwipe(false);
                 }
             }
             
@@ -511,11 +614,21 @@
                 const deltaX = this.currentX - this.startX;
                 const swipeZone = document.getElementById('swipeZone');
                 
-                const rotation = deltaX * 0.05;
-                const opacity = 1 - Math.abs(deltaX) / 200;
+                const rotation = deltaX * 0.08;
+                const opacity = 1 - Math.abs(deltaX) / 300;
                 
                 swipeZone.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
-                swipeZone.style.opacity = Math.max(0.5, opacity);
+                swipeZone.style.opacity = Math.max(0.4, opacity);
+                
+                // Add directional feedback
+                swipeZone.classList.remove('dragging-left', 'dragging-right');
+                if (Math.abs(deltaX) > 40) {
+                    if (deltaX < 0) {
+                        swipeZone.classList.add('dragging-left');
+                    } else {
+                        swipeZone.classList.add('dragging-right');
+                    }
+                }
             }
             
             endDrag() {
@@ -525,41 +638,43 @@
                 const deltaX = this.currentX - this.startX;
                 const swipeZone = document.getElementById('swipeZone');
                 
-                swipeZone.classList.remove('dragging');
+                swipeZone.classList.remove('dragging', 'dragging-left', 'dragging-right');
                 
-                if (Math.abs(deltaX) > 80) {
-                    const isPositive = deltaX < 0; // Swapped: left swipe (negative deltaX) = positive/yes
-                    this.recordSwipe(isPositive);
-                    this.showSwipeFeedback(isPositive);
+                if (Math.abs(deltaX) > 100) {
+                    const isYes = deltaX < 0;
+                    this.recordSwipe(isYes);
+                    this.showSwipeFeedback(isYes);
                 } else {
-                    // Snap back
+                    // Snap back with elastic animation
+                    swipeZone.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
                     swipeZone.style.transform = '';
                     swipeZone.style.opacity = '';
+                    setTimeout(() => {
+                        swipeZone.style.transition = '';
+                    }, 300);
                 }
                 
-                // Always reset after a brief delay
                 setTimeout(() => {
                     swipeZone.style.transform = '';
                     swipeZone.style.opacity = '';
+                    swipeZone.style.transition = '';
                     swipeZone.classList.remove('swipe-left-anim', 'swipe-right-anim');
-                }, 300);
+                }, 400);
             }
             
-            showSwipeFeedback(isPositive) {
+            showSwipeFeedback(isYes) {
                 const swipeZone = document.getElementById('swipeZone');
                 const feedbackFlash = document.getElementById('feedbackFlash');
                 
-                // Add animation class
-                swipeZone.classList.add(isPositive ? 'swipe-right-anim' : 'swipe-left-anim');
+                swipeZone.classList.add(isYes ? 'swipe-left-anim' : 'swipe-right-anim');
                 
-                // Flash effect
-                feedbackFlash.classList.add('active', isPositive ? 'positive' : 'negative');
+                feedbackFlash.classList.add('active', isYes ? 'positive' : 'negative');
                 setTimeout(() => {
                     feedbackFlash.classList.remove('active', 'positive', 'negative');
-                }, 200);
+                }, 300);
             }
             
-            recordSwipe(isPositive) {
+            recordSwipe(isYes) {
                 const timestamp = new Date().toISOString();
                 const melbourneTime = new Date().toLocaleString('en-AU', {
                     timeZone: 'Australia/Melbourne'
@@ -569,16 +684,14 @@
                     userId: this.userId,
                     username: this.username,
                     roomSide: this.roomSide,
-                    swipeDirection: isPositive ? 'left' : 'right', // Swapped: left = yes, right = no
-                    response: isPositive ? 'yes' : 'no',
+                    swipeDirection: isYes ? 'left' : 'right',
+                    response: isYes ? 'yes' : 'no',
                     timestamp: timestamp,
                     melbourneTime: melbourneTime,
                     userAgent: navigator.userAgent
                 };
                 
                 console.log('Swipe recorded:', swipeData);
-                
-                // Send to server (implement this based on your backend)
                 this.sendToServer(swipeData);
             }
             
@@ -599,7 +712,6 @@
                     }
                 } catch (error) {
                     console.error('Error sending swipe data:', error);
-                    // Store locally as backup
                     const localData = JSON.parse(localStorage.getItem('pendingSwipes') || '[]');
                     localData.push(data);
                     localStorage.setItem('pendingSwipes', JSON.stringify(localData));
@@ -607,10 +719,8 @@
             }
         }
         
-        // Global app instance
         let app;
         
-        // Global functions for UI navigation
         function proceedToRoomSelection() {
             const username = document.getElementById('usernameInput').value.trim();
             if (username.length === 0) return;
@@ -625,12 +735,10 @@
             document.getElementById('roomSelection').style.display = 'none';
             document.getElementById('swipeInterface').style.display = 'flex';
             
-            // Update user info display
             document.getElementById('userInfo').textContent = 
                 `${app.username} | Room ${side} | ID: ${app.userId.split('_')[1]}`;
         }
         
-        // Initialize app when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             app = new DepthPerceptionApp();
         });
