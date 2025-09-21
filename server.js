@@ -8,8 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize Supabase client - Replace with your actual values
-const supabaseUrl = 'YOUR_SUPABASE_URL'; // Replace with your Supabase project URL
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY'; // Replace with your Supabase anon key
+const supabaseUrl = 'https://istuwvpfudgrwkpckypl.supabase.co'; // Replace with your Supabase project URL
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzdHV3dnBmdWRncndrcGNreXBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0OTI1NjYsImV4cCI6MjA3NDA2ODU2Nn0.Fw38hB4jqSv0IH5lKrKJvarQwDt1DaQyCiJ0aqsDYDE'; // Replace with your Supabase anon key
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
