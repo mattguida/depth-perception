@@ -175,6 +175,7 @@
             align-items: center;
             position: relative;
             padding: 20px;
+            overflow: visible;
         }
         .swipe-zone {
             width: 280px;
@@ -227,6 +228,70 @@
             box-shadow: 0 15px 40px rgba(26,26,46,0.2);
             border-color: rgba(26,26,46,0.6);
         }
+        
+        /* New Holding Zone Styles */
+        .swipe-zone.in-holding-zone {
+            border-color: #ffa502;
+            box-shadow: 0 0 20px rgba(255,165,2,0.4), 0 15px 40px rgba(26,26,46,0.2);
+            animation: intensityPulse 1.5s ease-in-out infinite;
+        }
+        
+        .swipe-zone.in-holding-zone.left-side {
+            border-color: #ff4757;
+            box-shadow: 0 0 20px rgba(255,71,87,0.6), 0 15px 40px rgba(255,71,87,0.2);
+        }
+        
+        .swipe-zone.in-holding-zone.right-side {
+            border-color: #2ed573;
+            box-shadow: 0 0 20px rgba(46,213,115,0.6), 0 15px 40px rgba(46,213,115,0.2);
+        }
+        
+        @keyframes intensityPulse {
+            0%, 100% { 
+                transform: translateX(var(--hold-x, 0)) scale(1.05); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateX(var(--hold-x, 0)) scale(1.08); 
+                opacity: 0.95; 
+            }
+        }
+        
+        /* Intensity indicator */
+        .intensity-bar {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .intensity-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffa502, #ff6348, #ff4757);
+            transition: width 0.1s ease;
+            border-radius: 4px;
+        }
+        
+        .swipe-zone.in-holding-zone .intensity-bar {
+            opacity: 1;
+        }
+        
+        .swipe-zone.in-holding-zone.left-side .intensity-fill {
+            background: linear-gradient(90deg, #ffa502, #ff6348, #ff4757);
+        }
+        
+        .swipe-zone.in-holding-zone.right-side .intensity-fill {
+            background: linear-gradient(90deg, #ffa502, #20bf6b, #2ed573);
+        }
+        
         .swipe-instruction {
             font-size: 18px;
             color: #1a1a2e;
@@ -236,7 +301,31 @@
             line-height: 1.5;
             z-index: 2;
             position: relative;
+            transition: all 0.3s ease;
         }
+        
+        .swipe-zone.in-holding-zone .swipe-instruction {
+            font-size: 16px;
+            opacity: 1;
+            color: #ff6348;
+            font-weight: 600;
+        }
+        
+        .holding-instruction {
+            font-size: 14px;
+            color: #ff6348;
+            text-align: center;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 2;
+            position: relative;
+        }
+        
+        .swipe-zone.in-holding-zone .holding-instruction {
+            opacity: 1;
+        }
+        
         .swipe-visual-hint {
             display: flex;
             justify-content: space-between;
@@ -448,9 +537,16 @@
                         Swipe left for NO<br>
                         Swipe right for YES
                     </div>
+                    <div class="holding-instruction">
+                        Hold at edge to build intensity!<br>
+                        Release to swipe through
+                    </div>
                     <div class="swipe-visual-hint">
                         <div class="swipe-arrow left">←</div>
                         <div class="swipe-arrow right">→</div>
+                    </div>
+                    <div class="intensity-bar">
+                        <div class="intensity-fill"></div>
                     </div>
                 </div>
                 <div class="feedback-flash" id="feedbackFlash"></div>
@@ -482,6 +578,17 @@
                 this.maxSwipesPerSecond = 0;
                 this.sessionStartTime = Date.now();
                 
+                // New intensity tracking properties
+                this.isInHoldingZone = false;
+                this.holdingStartTime = null;
+                this.holdingDuration = 0;
+                this.maxHoldingDuration = 3000; // 3 seconds max
+                this.holdingThreshold = 120; // pixels from center to enter holding zone
+                this.releaseThreshold = 180; // pixels from center to trigger swipe
+                this.intensityBuildupRate = 1; // intensity per ms in holding zone
+                this.currentIntensity = 0;
+                this.maxIntensity = 100;
+                
                 this.init();
             }
             
@@ -493,11 +600,8 @@
             }
             
             generateUserId() {
-                this.userId = localStorage.getItem('depthPerceptionUserId');
-                if (!this.userId) {
-                    this.userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('depthPerceptionUserId', this.userId);
-                }
+                // Note: localStorage not used in artifacts, using session-based ID
+                this.userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 console.log('User ID:', this.userId);
             }
             
@@ -558,14 +662,16 @@
                 
                 // Hover hints
                 swipeZone.addEventListener('mouseenter', () => {
-                    swipeZone.classList.add('hint-left');
-                    setTimeout(() => {
-                        swipeZone.classList.remove('hint-left');
-                        swipeZone.classList.add('hint-right');
+                    if (!this.isDragging) {
+                        swipeZone.classList.add('hint-left');
                         setTimeout(() => {
-                            swipeZone.classList.remove('hint-right');
+                            swipeZone.classList.remove('hint-left');
+                            swipeZone.classList.add('hint-right');
+                            setTimeout(() => {
+                                swipeZone.classList.remove('hint-right');
+                            }, 500);
                         }, 500);
-                    }, 500);
+                    }
                 });
             }
             
@@ -600,9 +706,9 @@
                 if (document.getElementById('swipeInterface').style.display !== 'flex') return;
                 
                 if (e.key === 'ArrowLeft') {
-                    this.recordSwipe(false);
+                    this.recordSwipe(false, 50); // Medium intensity for keyboard
                 } else if (e.key === 'ArrowRight') {
-                    this.recordSwipe(true);
+                    this.recordSwipe(true, 50); // Medium intensity for keyboard
                 }
             }
             
@@ -610,7 +716,14 @@
                 this.isDragging = true;
                 this.startX = clientX;
                 this.currentX = clientX;
-                document.getElementById('swipeZone').classList.add('dragging');
+                this.isInHoldingZone = false;
+                this.holdingStartTime = null;
+                this.holdingDuration = 0;
+                this.currentIntensity = 0;
+                
+                const swipeZone = document.getElementById('swipeZone');
+                swipeZone.classList.add('dragging');
+                this.updateIntensityBar(0);
             }
             
             updateDrag(clientX) {
@@ -619,21 +732,81 @@
                 this.currentX = clientX;
                 const deltaX = this.currentX - this.startX;
                 const swipeZone = document.getElementById('swipeZone');
+                const absDeltaX = Math.abs(deltaX);
                 
-                const rotation = deltaX * 0.08;
-                const opacity = 1 - Math.abs(deltaX) / 300;
+                // Check if we're in the holding zone
+                const wasInHoldingZone = this.isInHoldingZone;
+                this.isInHoldingZone = absDeltaX >= this.holdingThreshold && absDeltaX < this.releaseThreshold;
                 
-                swipeZone.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
-                swipeZone.style.opacity = Math.max(0.4, opacity);
-                
-                // Add directional feedback
-                swipeZone.classList.remove('dragging-left', 'dragging-right');
-                if (Math.abs(deltaX) > 40) {
-                    if (deltaX < 0) {
-                        swipeZone.classList.add('dragging-left');
-                    } else {
-                        swipeZone.classList.add('dragging-right');
+                if (this.isInHoldingZone) {
+                    // Entering holding zone
+                    if (!wasInHoldingZone) {
+                        this.holdingStartTime = Date.now();
+                        swipeZone.classList.add('in-holding-zone');
+                        if (deltaX < 0) {
+                            swipeZone.classList.add('left-side');
+                        } else {
+                            swipeZone.classList.add('right-side');
+                        }
                     }
+                    
+                    // Update holding duration and intensity
+                    this.holdingDuration = Date.now() - this.holdingStartTime;
+                    this.currentIntensity = Math.min(
+                        this.maxIntensity,
+                        (this.holdingDuration / this.maxHoldingDuration) * this.maxIntensity
+                    );
+                    
+                    // Keep the box at the holding zone edge
+                    const holdingX = deltaX < 0 ? -this.holdingThreshold : this.holdingThreshold;
+                    const rotation = holdingX * 0.08;
+                    
+                    swipeZone.style.setProperty('--hold-x', holdingX + 'px');
+                    swipeZone.style.transform = `translateX(${holdingX}px) rotate(${rotation}deg)`;
+                    
+                    this.updateIntensityBar(this.currentIntensity);
+                    
+                } else if (wasInHoldingZone) {
+                    // Leaving holding zone
+                    swipeZone.classList.remove('in-holding-zone', 'left-side', 'right-side');
+                    this.holdingStartTime = null;
+                    
+                    if (absDeltaX < this.holdingThreshold) {
+                        // Went back to center - continue normal drag
+                        const rotation = deltaX * 0.08;
+                        const opacity = 1 - Math.abs(deltaX) / 300;
+                        
+                        swipeZone.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+                        swipeZone.style.opacity = Math.max(0.4, opacity);
+                        this.updateIntensityBar(0);
+                    }
+                } else {
+                    // Normal dragging
+                    const rotation = deltaX * 0.08;
+                    const opacity = 1 - Math.abs(deltaX) / 300;
+                    
+                    swipeZone.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+                    swipeZone.style.opacity = Math.max(0.4, opacity);
+                    this.updateIntensityBar(0);
+                }
+                
+                // Add directional feedback for normal dragging
+                if (!this.isInHoldingZone) {
+                    swipeZone.classList.remove('dragging-left', 'dragging-right');
+                    if (Math.abs(deltaX) > 40) {
+                        if (deltaX < 0) {
+                            swipeZone.classList.add('dragging-left');
+                        } else {
+                            swipeZone.classList.add('dragging-right');
+                        }
+                    }
+                }
+            }
+            
+            updateIntensityBar(intensity) {
+                const intensityFill = document.querySelector('.intensity-fill');
+                if (intensityFill) {
+                    intensityFill.style.width = `${intensity}%`;
                 }
             }
             
@@ -643,15 +816,38 @@
                 this.isDragging = false;
                 const deltaX = this.currentX - this.startX;
                 const swipeZone = document.getElementById('swipeZone');
+                const absDeltaX = Math.abs(deltaX);
                 
                 swipeZone.classList.remove('dragging', 'dragging-left', 'dragging-right');
+                swipeZone.classList.remove('in-holding-zone', 'left-side', 'right-side');
                 
-                if (Math.abs(deltaX) > 100) {
+                // Check if we should trigger a swipe
+                if (absDeltaX >= this.releaseThreshold || this.currentIntensity >= this.maxIntensity) {
+                    // Swipe triggered
                     const isYes = deltaX > 0; // Right swipe = YES
-                    this.recordSwipe(isYes);
+                    const finalIntensity = Math.max(this.currentIntensity, (absDeltaX / 300) * 100);
+                    
+                    this.recordSwipe(isYes, finalIntensity);
                     this.showSwipeFeedback(isYes);
+                } else if (absDeltaX > 40) {
+                    // Partial swipe - snap back with elastic animation
+                    swipeZone.style.transition = 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+                    swipeZone.style.transform = '';
+                    swipeZone.style.opacity = '';
+                    
+                    // Show brief feedback that they were close
+                    const feedbackFlash = document.getElementById('feedbackFlash');
+                    feedbackFlash.classList.add('active');
+                    feedbackFlash.style.background = 'radial-gradient(circle, #ffa502, transparent)';
+                    setTimeout(() => {
+                        feedbackFlash.classList.remove('active');
+                    }, 200);
+                    
+                    setTimeout(() => {
+                        swipeZone.style.transition = '';
+                    }, 400);
                 } else {
-                    // Snap back with elastic animation
+                    // Small movement - quick snap back
                     swipeZone.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
                     swipeZone.style.transform = '';
                     swipeZone.style.opacity = '';
@@ -660,12 +856,19 @@
                     }, 300);
                 }
                 
+                // Reset intensity tracking
+                this.currentIntensity = 0;
+                this.holdingDuration = 0;
+                this.holdingStartTime = null;
+                this.updateIntensityBar(0);
+                
+                // Reset transform after animation
                 setTimeout(() => {
                     swipeZone.style.transform = '';
                     swipeZone.style.opacity = '';
                     swipeZone.style.transition = '';
                     swipeZone.classList.remove('swipe-left-anim', 'swipe-right-anim');
-                }, 400);
+                }, 500);
             }
             
             showSwipeFeedback(isYes) {
@@ -708,7 +911,7 @@
                 };
             }
             
-            recordSwipe(isYes) {
+            recordSwipe(isYes, intensity = 0) {
                 const timestamp = new Date().toISOString();
                 const melbourneTime = new Date().toLocaleString('en-AU', {
                     timeZone: 'Australia/Melbourne'
@@ -731,6 +934,8 @@
                     roomSide: this.roomSide,
                     swipeDirection: isYes ? 'right' : 'left',
                     response: isYes ? 'yes' : 'no',
+                    intensity: Math.round(intensity), // New intensity field
+                    holdingDuration: this.holdingDuration, // How long they held in zone
                     timestamp: timestamp,
                     melbourneTime: melbourneTime,
                     userAgent: navigator.userAgent,
@@ -747,24 +952,16 @@
             
             async sendToServer(data) {
                 try {
-                    const response = await fetch('/api/swipe', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
-                    });
+                    // In a real implementation, this would POST to your server
+                    console.log('Would send to server:', data);
                     
-                    if (!response.ok) {
-                        console.error('Failed to save swipe:', response.status);
-                    } else {
-                        console.log('Swipe saved successfully');
-                    }
+                    // Simulate server response
+                    setTimeout(() => {
+                        console.log('Swipe saved successfully (simulated)');
+                    }, 100);
+                    
                 } catch (error) {
                     console.error('Error sending swipe data:', error);
-                    const localData = JSON.parse(localStorage.getItem('pendingSwipes') || '[]');
-                    localData.push(data);
-                    localStorage.setItem('pendingSwipes', JSON.stringify(localData));
                 }
             }
         }
