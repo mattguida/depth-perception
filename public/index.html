@@ -200,7 +200,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(46,213,115,0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,71,87,0.3), transparent);
             transition: left 0.3s ease;
         }
         .swipe-zone::after {
@@ -210,7 +210,7 @@
             right: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,71,87,0.3), transparent);
+            background: linear-gradient(90deg, transparent, rgba(46,213,115,0.3), transparent);
             transition: right 0.3s ease;
         }
         .swipe-zone.hint-left::before {
@@ -252,11 +252,11 @@
             animation: pulse 2s infinite;
         }
         .swipe-arrow.left {
-            color: #2ed573;
+            color: #ff4757;
             animation: slideLeft 2s infinite;
         }
         .swipe-arrow.right {
-            color: #ff4757;
+            color: #2ed573;
             animation: slideRight 2s infinite;
         }
         @keyframes slideLeft {
@@ -285,15 +285,14 @@
             transition: all 0.3s ease;
         }
         .swipe-indicator.left {
-            color: #2ed573;
-        }
-        .swipe-indicator.right {
             color: #ff4757;
         }
+        .swipe-indicator.right {
+            color: #2ed573;
+        }
         .swipe-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            width: 60px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -302,12 +301,15 @@
             font-weight: bold;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             transition: all 0.3s ease;
+            position: relative;
         }
         .swipe-icon.left {
-            background: linear-gradient(135deg, #2ed573, #20bf6b);
+            background: linear-gradient(135deg, #ff4757, #ff3742);
+            clip-path: polygon(0 50%, 25% 0%, 100% 0%, 100% 100%, 25% 100%);
         }
         .swipe-icon.right {
-            background: linear-gradient(135deg, #ff4757, #ff3742);
+            background: linear-gradient(135deg, #2ed573, #20bf6b);
+            clip-path: polygon(0 0%, 75% 0%, 100% 50%, 75% 100%, 0 100%);
         }
         .swipe-indicator:hover .swipe-icon {
             transform: scale(1.1);
@@ -394,12 +396,12 @@
         
         /* Improved dragging visual feedback */
         .swipe-zone.dragging-left {
-            border-color: #2ed573;
-            box-shadow: 0 15px 40px rgba(46,213,115,0.3);
-        }
-        .swipe-zone.dragging-right {
             border-color: #ff4757;
             box-shadow: 0 15px 40px rgba(255,71,87,0.3);
+        }
+        .swipe-zone.dragging-right {
+            border-color: #2ed573;
+            box-shadow: 0 15px 40px rgba(46,213,115,0.3);
         }
     </style>
 </head>
@@ -443,8 +445,8 @@
             <div class="swipe-area">
                 <div class="swipe-zone" id="swipeZone">
                     <div class="swipe-instruction">
-                        Swipe left for YES<br>
-                        Swipe right for NO
+                        Swipe left for NO<br>
+                        Swipe right for YES
                     </div>
                     <div class="swipe-visual-hint">
                         <div class="swipe-arrow left">←</div>
@@ -455,12 +457,12 @@
                 
                 <div class="swipe-indicators">
                     <div class="swipe-indicator left">
-                        <div class="swipe-icon left">✓</div>
-                        <span>YES</span>
+                        <div class="swipe-icon left">✕</div>
+                        <span>NO</span>
                     </div>
                     <div class="swipe-indicator right">
-                        <div class="swipe-icon right">✕</div>
-                        <span>NO</span>
+                        <div class="swipe-icon right">✓</div>
+                        <span>YES</span>
                     </div>
                 </div>
             </div>
@@ -476,6 +478,9 @@
                 this.startX = 0;
                 this.currentX = 0;
                 this.swipeCount = 0;
+                this.swipeTimestamps = [];
+                this.maxSwipesPerSecond = 0;
+                this.sessionStartTime = Date.now();
                 
                 this.init();
             }
@@ -595,9 +600,9 @@
                 if (document.getElementById('swipeInterface').style.display !== 'flex') return;
                 
                 if (e.key === 'ArrowLeft') {
-                    this.recordSwipe(true);
-                } else if (e.key === 'ArrowRight') {
                     this.recordSwipe(false);
+                } else if (e.key === 'ArrowRight') {
+                    this.recordSwipe(true);
                 }
             }
             
@@ -642,7 +647,7 @@
                 swipeZone.classList.remove('dragging', 'dragging-left', 'dragging-right');
                 
                 if (Math.abs(deltaX) > 100) {
-                    const isYes = deltaX < 0;
+                    const isYes = deltaX > 0; // Right swipe = YES
                     this.recordSwipe(isYes);
                     this.showSwipeFeedback(isYes);
                 } else {
@@ -667,12 +672,40 @@
                 const swipeZone = document.getElementById('swipeZone');
                 const feedbackFlash = document.getElementById('feedbackFlash');
                 
-                swipeZone.classList.add(isYes ? 'swipe-left-anim' : 'swipe-right-anim');
+                swipeZone.classList.add(isYes ? 'swipe-right-anim' : 'swipe-left-anim');
                 
                 feedbackFlash.classList.add('active', isYes ? 'positive' : 'negative');
                 setTimeout(() => {
                     feedbackFlash.classList.remove('active', 'positive', 'negative');
                 }, 300);
+            }
+            
+            calculateCertainty() {
+                const now = Date.now();
+                const timeWindow = 10000; // 10 seconds
+                const recentSwipes = this.swipeTimestamps.filter(timestamp => 
+                    now - timestamp <= timeWindow
+                );
+                
+                const swipesPerSecond = recentSwipes.length / (timeWindow / 1000);
+                
+                // Update maximum swipes per second
+                if (swipesPerSecond > this.maxSwipesPerSecond) {
+                    this.maxSwipesPerSecond = swipesPerSecond;
+                }
+                
+                // Calculate certainty percentage
+                let certainty = 0;
+                if (this.maxSwipesPerSecond > 0) {
+                    certainty = Math.round((swipesPerSecond / this.maxSwipesPerSecond) * 100);
+                }
+                
+                return {
+                    swipesInWindow: recentSwipes.length,
+                    swipesPerSecond: swipesPerSecond,
+                    maxSwipesPerSecond: this.maxSwipesPerSecond,
+                    certaintyPercentage: certainty
+                };
             }
             
             recordSwipe(isYes) {
@@ -681,15 +714,31 @@
                     timeZone: 'Australia/Melbourne'
                 });
                 
+                // Add to swipe timestamps for certainty calculation
+                this.swipeTimestamps.push(Date.now());
+                
+                // Keep only last 1000 timestamps to prevent memory issues
+                if (this.swipeTimestamps.length > 1000) {
+                    this.swipeTimestamps = this.swipeTimestamps.slice(-1000);
+                }
+                
+                // Calculate certainty metrics
+                const certaintyData = this.calculateCertainty();
+                
                 const swipeData = {
                     userId: this.userId,
                     username: this.username,
                     roomSide: this.roomSide,
-                    swipeDirection: isYes ? 'left' : 'right',
+                    swipeDirection: isYes ? 'right' : 'left',
                     response: isYes ? 'yes' : 'no',
                     timestamp: timestamp,
                     melbourneTime: melbourneTime,
-                    userAgent: navigator.userAgent
+                    userAgent: navigator.userAgent,
+                    sessionDuration: Date.now() - this.sessionStartTime,
+                    swipesInWindow: certaintyData.swipesInWindow,
+                    swipesPerSecond: certaintyData.swipesPerSecond,
+                    maxSwipesPerSecond: certaintyData.maxSwipesPerSecond,
+                    certaintyPercentage: certaintyData.certaintyPercentage
                 };
                 
                 console.log('Swipe recorded:', swipeData);
